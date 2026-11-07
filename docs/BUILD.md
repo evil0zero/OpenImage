@@ -22,7 +22,15 @@ The Linux commands are supplied for qualification. See the qualification report 
 
 ## Desktop
 
-Configure with `-DOPENIMAGE_QT=ON` and make Qt 6.5 or newer Widgets and Concurrent available to CMake. Qt is currently an external SDK and its source and runtime deployment are release blockers. Launch `openimage-desktop` from the build environment. The form uses the same engine as the terminal and command-line interfaces.
+The bundled preset builds Qt Base from the source tree, stages a static Qt SDK, then builds and installs OpenImage against it. It needs CMake 3.21 or newer and Ninja. On Windows, use the MSVC x64 Developer Command Prompt. On Linux, install the Qt X11/XCB development prerequisites before configuring. The bundled profile uses X11 on Linux and the native Windows platform plugin on Windows.
+
+    cmake --preset bundled-qt-release
+    cmake --build --preset bundled-qt-release
+    ctest --test-dir build/bundled-qt-release/application --output-on-failure
+
+The installed desktop executable is under `build/bundled-qt-release/install/bin`. The build uses `vendor/qtbase` unless a compatible `qtbase` source tree exists at the project root. Configuration and builds run without downloading dependencies. Windows system DLLs and the compiler runtime remain platform prerequisites.
+
+The older external-SDK path is still available via `-DOPENIMAGE_QT=ON` and a Qt 6.5 or newer SDK with Widgets and Concurrent. It uses that SDK's linkage and deployment requirements. See [bundled Qt provenance and distribution notes](QT.md).
 
 ## Dependencies
 
@@ -35,5 +43,6 @@ Configure with `-DOPENIMAGE_QT=ON` and make Qt 6.5 or newer Widgets and Concurre
 
 A root directory with the same name overrides its bundled counterpart. CMake reports the selected source paths and checks for expected source files. Compiler and linker checks cover the APIs in use. Dependency version policy, provenance audit and broader replacement-version qualification remain open.
 
-On this Windows host the Visual Studio generator did not complete a build. The Ninja MSVC build succeeded after specifying `-DCMAKE_TRY_COMPILE_CONFIGURATION=Release`, which avoids the host's PDB error in the compiler probe. The packaged binaries use the Microsoft Visual C++ 2015–2022 x64 runtime. For the desktop executable, use Qt 6.8.3 MSVC x64 and make its bin and plugins directories available. The Windows core archive carries the CLI and the desktop executable without Qt runtime libraries. The source archive carries the core codec and checksum libraries.
+On this Windows host the Visual Studio generator did not complete a build. The Ninja MSVC build succeeded after specifying `-DCMAKE_TRY_COMPILE_CONFIGURATION=Release`, which avoids the host's PDB error in the compiler probe. The previously published Windows development archive uses the Microsoft Visual C++ 2015–2022 x64 runtime and a separate Qt 6.8.3 MSVC x64 SDK. For a desktop build with Qt compiled in, use the bundled preset above.
+
 

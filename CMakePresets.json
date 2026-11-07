@@ -1,11 +1,22 @@
 {
   "version": 3,
   "configurePresets": [
+    {
+      "name": "bundled-qt-release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/bundled-qt-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TRY_COMPILE_CONFIGURATION": "Release",
+        "OPENIMAGE_BUNDLED_QT": "ON"
+      }
+    },
     {"name":"windows-msvc","generator":"Visual Studio 17 2022","architecture":"x64","binaryDir":"${sourceDir}/build/windows-msvc"},
     {"name":"linux-gcc","generator":"Ninja","binaryDir":"${sourceDir}/build/linux-gcc","cacheVariables":{"CMAKE_BUILD_TYPE":"Release","CMAKE_C_COMPILER":"gcc","CMAKE_CXX_COMPILER":"g++"}},
     {"name":"linux-clang-sanitizers","generator":"Ninja","binaryDir":"${sourceDir}/build/linux-clang-sanitizers","cacheVariables":{"CMAKE_BUILD_TYPE":"Debug","CMAKE_C_COMPILER":"clang","CMAKE_CXX_COMPILER":"clang++","CMAKE_C_FLAGS":"-fsanitize=address,undefined -fno-omit-frame-pointer","CMAKE_CXX_FLAGS":"-fsanitize=address,undefined -fno-omit-frame-pointer"}}
   ],
   "buildPresets": [
+    {"name":"bundled-qt-release","configurePreset":"bundled-qt-release"},
     {"name":"windows-release","configurePreset":"windows-msvc","configuration":"Release"},
     {"name":"windows-debug","configurePreset":"windows-msvc","configuration":"Debug"},
     {"name":"linux-release","configurePreset":"linux-gcc"},

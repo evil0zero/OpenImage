@@ -43,3 +43,7 @@ An isolated copy of the source built successfully with LZ4 1.9.4 in the root-lev
 ## Windows Qt desktop
 
 Qt 6.8.3 Widgets and Concurrent built with MSVC x64. Both appearance choices rendered and were captured with the Windows Qt backend. The screenshots document the regular-file form. Full workflow, keyboard accessibility, HiDPI and GUI latency qualification are **NOT TESTED**.
+
+## Source-built static Qt on Windows x64
+
+The bundled-qt-release preset built Qt Base 6.8.3 from the vendored source with MSVC 19.44 and Ninja, then linked and installed OpenImage. The installed desktop executable's PE imports contain no Qt DLLs. Windows system DLLs and the Microsoft C++ runtime remain dependencies. Both appearance captures passed with the compiled-in Windows plugin and no external Qt SDK configured. CTest passed both the offscreen capture and integration suites, including all seven integration methods. The Linux bundled preset is unqualified.
