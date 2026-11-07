@@ -36,7 +36,7 @@ constexpr const char* operation_names[]{"Backup", "Restore", "Clone", "Verify", 
 constexpr const char* operation_details[]{
     "Image a disk or file",
     "Recover a disk or file",
-    "Copy an offline disk or file",
+    "Copy a disk or file",
     "Check an image for errors",
     "Read an image header",
     "Compare an image with a file"
@@ -199,8 +199,8 @@ int main(int argc, char** argv) {
         row->addWidget(browse);
         row->addWidget(devices);
         QObject::connect(devices, &QComboBox::currentIndexChanged, &window, [=](int index) {
-            edit->setEnabled(index <= 0);
-            browse->setEnabled(index <= 0);
+            edit->setVisible(index <= 0);
+            browse->setVisible(index <= 0);
         });
         auto* caption = new QLabel(label);
         caption->setBuddy(edit);
@@ -236,10 +236,10 @@ int main(int argc, char** argv) {
                     (disk.running_os ? " · running OS" : "")};
             for (int column = 0; column < 5; ++column)
                 table->setItem(row, column, new QTableWidgetItem(values[column]));
-            if (disk.offline && disk.bytes && disk.sector && !disk.path.empty()) {
-                const auto label = QString("%1 · %2").arg(path, model);
+            if (disk.bytes && disk.sector && !disk.path.empty()) {
+                const auto label = QString("%1 · %2 · %3").arg(path, model, state);
                 source_devices->addItem(label, static_cast<int>(index));
-                if (!disk.read_only) target_devices->addItem(label, static_cast<int>(index));
+                if (!disk.read_only && !disk.running_os) target_devices->addItem(label, static_cast<int>(index));
             }
         }
         if (!disks.empty()) table->setCurrentCell(0, 0);
@@ -271,7 +271,7 @@ int main(int argc, char** argv) {
     execute->setObjectName("primary");
     workflow_layout->addWidget(execute, 0, Qt::AlignRight);
     workflow_layout->addStretch();
-    layout->addWidget(new QLabel("Exact imaging  ·  Raw disk access requires an offline device"));
+    layout->addWidget(new QLabel("Exact imaging  ·  Disk access requires administrator privileges and exclusive volume access"));
     layout->addWidget(progress);
     layout->addWidget(status);
     progress->hide();
@@ -287,6 +287,13 @@ int main(int argc, char** argv) {
         target_devices->setCurrentIndex(0);
         source_devices->setVisible(index == Backup || index == Clone);
         target_devices->setVisible(index == Restore || index == Clone);
+        const int selected_row = table->currentRow();
+        if (selected_row >= 0) {
+            if (index == Backup || index == Clone)
+                source_devices->setCurrentIndex(std::max(0, source_devices->findData(selected_row)));
+            if (index == Restore)
+                target_devices->setCurrentIndex(std::max(0, target_devices->findData(selected_row)));
+        }
         form->setRowVisible(1, uses_target(index));
         form->setRowVisible(codec, index == Backup);
         pages->setCurrentWidget(workflow);
@@ -375,7 +382,7 @@ int main(int argc, char** argv) {
         const auto input = native_path(source->text());
         const auto output = native_path(target->text());
         if ((!input_disk && input.empty()) || (uses_target(selected) && !output_disk && output.empty())) {
-            status->setText("Select the required files or offline disks first.");
+            status->setText("Select the source disk and destination first.");
             return;
         }
         const auto input_label = input_disk ? source_devices->currentText() : display_path(input);
@@ -450,6 +457,14 @@ int main(int argc, char** argv) {
     application.processEvents();
     inventory.waitForFinished();
     application.processEvents();
+    if (source_devices->count() > 1) {
+        table->setCurrentCell(source_devices->itemData(1).toInt(), 0);
+        select_operation(Backup);
+        if (source_devices->currentIndex() != 1 || !source->isHidden()) return 3;
+        select_operation(Clone);
+        if (source_devices->currentIndex() != 1 || !source->isHidden()) return 4;
+        pages->setCurrentWidget(dashboard);
+    }
     const char* names[]{"professional.png", "lcars.png"};
     for (int index = 0; index < 2; ++index) {
         theme->setCurrentIndex(index);

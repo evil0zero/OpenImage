@@ -53,6 +53,7 @@ private:
 #ifdef _WIN32
     void* handle_;
     void* disk_buffer_ = nullptr;
+    std::vector<void*> locked_volumes_;
 #else
     int handle_;
 #endif

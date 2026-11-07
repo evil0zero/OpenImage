@@ -1,5 +1,9 @@
 # Qualification
 
+## Windows preview.2 workflow integration
+
+Dashboard selection now supplies the physical source to Backup and Clone and the destination to Restore. All discovered disks appear in source choices. The desktop requests elevation. Online data disks use exclusive volume locks, with destination volumes dismounted before writes. The running OS disk is refused. GUI selection and existing integration tests pass. The online VHD test awaits Windows UAC approval and remains unqualified.
+
 ## Windows 0.2.0 preview
 
 - Startup discovery reported the attached NVMe, SATA and USB devices on Windows 11, including the GPT EFI, Microsoft Reserved and Windows Recovery partitions on the NVMe disk.

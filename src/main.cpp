@@ -29,7 +29,7 @@ void usage() {
                  "  openimage [--cli] disk-restore IMAGE DEVICE --overwrite\n"
                  "  openimage [--cli] disk-clone SOURCE_DEVICE TARGET_DEVICE --overwrite\n"
                  "  openimage --tui\n"
-                 "Imaging commands emit JSON. Raw disk access requires an offline device.\n";
+                 "Imaging commands emit JSON. Raw disk access requires exclusive volume access.\n";
 }
 
 void print_disks(const std::vector<oi::Disk>& disks) {

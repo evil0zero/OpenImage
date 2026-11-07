@@ -4,7 +4,7 @@
   "physicalDiskOperations": {
     "windows": {
       "startupInventory": true,
-      "requiresOfflineDeviceForRawIO": true,
+      "requiresExclusiveVolumeAccessForRawIO": true,
       "wholeDiskBackup": true,
       "exactRestore": true,
       "exactClone": true,

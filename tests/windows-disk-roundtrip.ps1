@@ -53,6 +53,13 @@ try {
             throw "Offline VHD missing from startup inventory: $device"
         }
     }
+    foreach ($vhd in $images) {
+        $testDisk = Get-DiskImage -ImagePath $vhd | Get-Disk
+        $testDisk | Set-Disk -IsOffline $false
+        $testDisk | Initialize-Disk -PartitionStyle MBR
+        $testDisk | New-Partition -UseMaximumSize |
+            Format-Volume -FileSystem NTFS -Confirm:$false | Out-Null
+    }
     $raw = Join-Path $root 'source.raw'
     $bytes = [byte[]]::new(32MB)
     [Random]::new(42).NextBytes($bytes)

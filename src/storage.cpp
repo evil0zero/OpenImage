@@ -59,14 +59,6 @@ bool disk_attributes(HANDLE handle, GET_DISK_ATTRIBUTES& attributes) {
     return query(handle, IOCTL_DISK_GET_DISK_ATTRIBUTES, attributes);
 }
 
-void require_offline(HANDLE handle, bool write) {
-    GET_DISK_ATTRIBUTES attributes{};
-    if (!disk_attributes(handle, attributes) || !(attributes.Attributes & DISK_ATTRIBUTE_OFFLINE))
-        throw std::runtime_error("Physical disk access requires a disk already offline in Windows");
-    if (write && (attributes.Attributes & DISK_ATTRIBUTE_READ_ONLY))
-        throw std::runtime_error("The physical disk is read-only");
-}
-
 Disk probe(HANDLE handle, const fs::path& interface_path) {
     Disk disk;
     disk.interface_path = interface_path;
@@ -236,6 +228,8 @@ std::vector<Disk> discover_disks() {
 
 File::File(const Disk& disk, bool write) {
 #ifdef _WIN32
+    if (disk.running_os)
+        throw std::runtime_error("The running Windows disk requires an offline recovery environment");
     if (disk.path.empty() || disk.interface_path.empty() || !disk.bytes || !disk.sector ||
         transfer_size % disk.sector || disk.bytes % disk.sector)
         throw std::runtime_error("Disk identity or geometry is unavailable or unsupported");
@@ -248,7 +242,66 @@ File::File(const Disk& disk, bool write) {
         if (actual.path != disk.path || actual.serial != disk.serial || actual.model != disk.model ||
             actual.bytes != disk.bytes || actual.sector != disk.sector)
             throw std::runtime_error("Disk identity or geometry changed. Refresh and select it again.");
-        require_offline(handle_, write);
+        GET_DISK_ATTRIBUTES attributes{};
+        if (!disk_attributes(handle_, attributes))
+            throw std::runtime_error("Cannot establish disk access state");
+        if (write && (attributes.Attributes & DISK_ATTRIBUTE_READ_ONLY))
+            throw std::runtime_error("The physical disk is read-only");
+        if (!(attributes.Attributes & DISK_ATTRIBUTE_OFFLINE)) {
+            STORAGE_DEVICE_NUMBER disk_number{};
+            if (!query(handle_, IOCTL_STORAGE_GET_DEVICE_NUMBER, disk_number))
+                throw std::runtime_error("Cannot identify physical disk");
+            wchar_t volume_name[MAX_PATH]{};
+            HANDLE search = FindFirstVolumeW(volume_name, MAX_PATH);
+            if (search == INVALID_HANDLE_VALUE) fail("Enumerating volumes for exclusive access");
+            try {
+                do {
+                    std::wstring name(volume_name);
+                    if (!name.empty() && name.back() == L'\\') name.pop_back();
+                    std::unique_ptr<void, decltype(&CloseHandle)> volume(
+                        CreateFileW(name.c_str(), 0, disk_share, nullptr, OPEN_EXISTING, 0, nullptr),
+                        CloseHandle);
+                    if (volume.get() == INVALID_HANDLE_VALUE) {
+                        volume.release();
+                        fail("Inspecting volume ownership");
+                    }
+                    alignas(VOLUME_DISK_EXTENTS) std::array<unsigned char, 65536> buffer{};
+                    DWORD count = 0;
+                    if (!DeviceIoControl(volume.get(), IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                            nullptr, 0, buffer.data(), static_cast<DWORD>(buffer.size()), &count, nullptr))
+                        fail("Resolving volume disk extents");
+                    const auto* extents = reinterpret_cast<const VOLUME_DISK_EXTENTS*>(buffer.data());
+                    if (count < offsetof(VOLUME_DISK_EXTENTS, Extents) ||
+                        extents->NumberOfDiskExtents >
+                            (count - offsetof(VOLUME_DISK_EXTENTS, Extents)) / sizeof(DISK_EXTENT))
+                        throw std::runtime_error("Invalid volume disk extents");
+                    bool belongs = false;
+                    for (DWORD index = 0; index < extents->NumberOfDiskExtents; ++index)
+                        belongs |= extents->Extents[index].DiskNumber == disk_number.DeviceNumber;
+                    if (!belongs) continue;
+                    if (extents->NumberOfDiskExtents != 1)
+                        throw std::runtime_error("Multi-extent volumes require offline recovery");
+                    volume.reset(CreateFileW(name.c_str(), GENERIC_READ | GENERIC_WRITE,
+                        disk_share, nullptr, OPEN_EXISTING, 0, nullptr));
+                    if (volume.get() == INVALID_HANDLE_VALUE) {
+                        volume.release();
+                        fail("Opening volume for exclusive access");
+                    }
+                    if (!DeviceIoControl(volume.get(), FSCTL_LOCK_VOLUME, nullptr, 0,
+                            nullptr, 0, &count, nullptr))
+                        fail("Locking volume; close applications using this disk and try again");
+                    locked_volumes_.push_back(volume.release());
+                    if (write && !DeviceIoControl(locked_volumes_.back(), FSCTL_DISMOUNT_VOLUME,
+                            nullptr, 0, nullptr, 0, &count, nullptr))
+                        fail("Dismounting locked destination volume");
+                } while (FindNextVolumeW(search, volume_name, MAX_PATH));
+                if (GetLastError() != ERROR_NO_MORE_FILES) fail("Enumerating remaining volumes");
+            } catch (...) {
+                FindVolumeClose(search);
+                throw;
+            }
+            FindVolumeClose(search);
+        }
         disk_buffer_ = VirtualAlloc(nullptr, transfer_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
         if (!disk_buffer_) fail("Allocating aligned disk I/O buffer");
         disk_size_ = actual.bytes;
@@ -301,6 +354,7 @@ void File::close() noexcept {
 #ifdef _WIN32
     if (disk_buffer_) VirtualFree(disk_buffer_, 0, MEM_RELEASE);
     CloseHandle(handle_);
+    for (auto volume : locked_volumes_) CloseHandle(volume);
 #else
     ::close(handle_);
 #endif
@@ -329,7 +383,6 @@ void File::read(Bytes data) {
     while (!data.empty()) {
 #ifdef _WIN32
         DWORD count = 0;
-        if (disk_buffer_) require_offline(handle_, false);
         auto* buffer = disk_buffer_ ? disk_buffer_ : data.data();
         const auto size = disk_buffer_ ? std::min<std::size_t>(data.size(), transfer_size) : data.size();
         if (!ReadFile(handle_, buffer, static_cast<DWORD>(size), &count, nullptr))
@@ -352,7 +405,6 @@ void File::write(View data) {
         const void* buffer = data.data();
         if (disk_buffer_) {
             if (!disk_write_) throw std::runtime_error("Physical disk was opened for reading");
-            require_offline(handle_, true);
             size = std::min<std::size_t>(size, transfer_size);
             std::memcpy(disk_buffer_, data.data(), size);
             buffer = disk_buffer_;

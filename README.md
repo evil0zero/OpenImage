@@ -1,6 +1,6 @@
 # OpenImage
 
-OpenImage 0.2.0 is a Windows x64 preview. The desktop and terminal discover physical disks automatically. The desktop includes Professional and LCARS dashboards with partition and mounted-volume information. Backup, restore and clone support exact whole-disk transfers on eligible offline Windows disks. The regular-file engine supports backup, restore, clone, verification, comparison and OMI header inspection. See the [qualification report](docs/QUALIFICATION.md) and [release blockers](docs/RELEASE-BLOCKERS.md).
+OpenImage 0.2.0 is a Windows x64 preview. The desktop and terminal discover physical disks automatically. The desktop includes Professional and LCARS dashboards with partition and mounted-volume information. Backup, restore and clone support exact whole-disk transfers on eligible Windows disks. The regular-file engine supports backup, restore, clone, verification, comparison and OMI header inspection. See the [qualification report](docs/QUALIFICATION.md) and [release blockers](docs/RELEASE-BLOCKERS.md).
 
     openimage backup offline.raw backup.omi zstd
     openimage verify backup.omi
@@ -13,7 +13,7 @@ Keep inputs offline and stable throughout each operation. Use a trusted local ou
 
 ## Windows raw disk imaging
 
-Launch the desktop or CLI as an administrator for disk I/O. The device must already be offline in Windows. After changing disk state, refresh the desktop or rerun `openimage disks` and verify the destination against the current device list. The desktop asks you to type the destination device path before a raw write.
+The desktop requests administrator privileges at launch. Run the CLI as an administrator for disk I/O. Online data disks are opened with exclusive volume locks. Close programs using the disk before starting. Destination volumes are dismounted after locking. The running Windows disk requires a recovery environment. After changing disk state, refresh the desktop or rerun `openimage disks` and verify the destination against the current device list. The desktop asks you to type the destination device path before a raw write.
 
     openimage disks
     openimage disk-backup "\\.\PhysicalDriveN" backup.omi zstd
