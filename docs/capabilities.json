@@ -1,7 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "regularFiles": {"backup": true, "restoreToNewFile": true, "cloneToNewFile": true, "verify": true, "compare": true, "exploreHeader": true},
-  "physicalDiskOperations": false,
+  "physicalDiskOperations": {
+    "windows": {
+      "startupInventory": true,
+      "requiresOfflineDeviceForRawIO": true,
+      "wholeDiskBackup": true,
+      "exactRestore": true,
+      "exactClone": true,
+      "rawIOQualification": "disposable VHDs"
+    },
+    "linux": false
+  },
   "filesystemAwareImaging": [],
   "filesystemResizing": [],
   "filesystemExtraction": [],

@@ -1,5 +1,14 @@
 # Qualification
 
+## Windows 0.2.0 preview
+
+- Startup discovery reported the attached NVMe, SATA and USB devices on Windows 11, including the GPT EFI, Microsoft Reserved and Windows Recovery partitions on the NVMe disk.
+- An elevated raw-disk test created two fixed-size 32 MiB VHDs, took them offline, restored a seeded OMI image to one disk and cloned it to the other. Backup and comparison of the clone reproduced the original data byte for byte. The test detached and removed the temporary VHDs.
+- The same run verified rejection of missing overwrite confirmation, a same-disk clone, a size mismatch and an invalid image. The target still compared byte for byte after the rejected writes.
+- CTest passed the native Windows dashboard capture and regular-file integration suites. The desktop PE import table contains no Qt DLLs. The Microsoft Visual C++ runtime remains a prerequisite.
+
+Run `tests/windows-disk-roundtrip.ps1` from elevated PowerShell to repeat the VHD test. Raw read/write on real NVMe, SATA or USB media, Linux builds and boot recovery remain unqualified.
+
 ## Windows x64 regular-file engine
 
 The release-mode core and CLI built with MSVC 19.44.35229, Windows SDK 10.0.26100, CMake 4.4.4 and Ninja on Windows 11 build 26300. Python 3.12.10 drove the tests. All seven integration test methods passed in 2.19 seconds with hard-link creation enabled. The routine restricted execution passed six and skipped the hard-link case because Windows refused to create the fixture. The test matrix covered:

@@ -12,11 +12,13 @@ struct ImageInfo {
 using Progress = std::function<void(std::uint64_t, std::uint64_t)>;
 
 void backup(const fs::path& source, const fs::path& image, Codec codec,
-            const Progress& progress = {});
+            const Progress& progress = {}, const Disk* source_disk = nullptr);
 ImageInfo verify(const fs::path& image);
 ImageInfo inspect(const fs::path& image);
-void restore(const fs::path& image, const fs::path& target, const Progress& progress = {});
-void clone(const fs::path& source, const fs::path& target, const Progress& progress = {});
+void restore(const fs::path& image, const fs::path& target, const Progress& progress = {},
+             const Disk* target_disk = nullptr);
+void clone(const fs::path& source, const fs::path& target, const Progress& progress = {},
+           const Disk* source_disk = nullptr, const Disk* target_disk = nullptr);
 void compare(const fs::path& image, const fs::path& restored);
 const char* codec_name(Codec codec);
 }

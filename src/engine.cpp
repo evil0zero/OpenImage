@@ -222,8 +222,9 @@ const char* codec_name(Codec codec) {
     invalid("Unsupported codec");
 }
 
-void backup(const fs::path& source, const fs::path& image, Codec codec, const Progress& progress) {
-    File input(source);
+void backup(const fs::path& source, const fs::path& image, Codec codec, const Progress& progress,
+            const Disk* source_disk) {
+    File input = source_disk ? File(*source_disk, false) : File(source);
     const auto total = input.size();
     validate_size(total);
     Output output(image);
@@ -275,10 +276,22 @@ ImageInfo verify(const fs::path& image) {
     return read_image(input, nullptr, nullptr, {});
 }
 
-void restore(const fs::path& image, const fs::path& target, const Progress& progress) {
+void restore(const fs::path& image, const fs::path& target, const Progress& progress,
+             const Disk* target_disk) {
     File input(image);
-    read_image(input, nullptr, nullptr, {});
+    const auto info = read_image(input, nullptr, nullptr, {});
     input.rewind();
+    if (target_disk) {
+        if (info.bytes != target_disk->bytes)
+            invalid("Exact restore requires an image and disk of the same size");
+        File writer(*target_disk, true);
+        read_image(input, &writer, nullptr, progress);
+        writer.flush();
+        writer.rewind();
+        input.rewind();
+        read_image(input, nullptr, &writer, {});
+        return;
+    }
     Output output(target);
     {
         File writer(output.staging(), true);
@@ -293,15 +306,21 @@ void restore(const fs::path& image, const fs::path& target, const Progress& prog
     output.publish();
 }
 
-void clone(const fs::path& source, const fs::path& target, const Progress& progress) {
-    File input(source);
+void clone(const fs::path& source, const fs::path& target, const Progress& progress,
+           const Disk* source_disk, const Disk* target_disk) {
+    if (source_disk && target_disk) {
+        if (source_disk->path == target_disk->path ||
+            source_disk->interface_path == target_disk->interface_path)
+            invalid("Source and destination must be different physical disks");
+        if (source_disk->sector != target_disk->sector)
+            invalid("Exact cloning requires matching logical sector sizes");
+    }
+    File input = source_disk ? File(*source_disk, false) : File(source);
     const auto total = input.size();
     validate_size(total);
-    Output output(target);
     Buffer buffer(chunk_size);
     Hash original;
-    {
-        File writer(output.staging(), true);
+    const auto copy = [&](File& writer) {
         for (std::uint64_t offset = 0; offset < total;) {
             auto chunk = Bytes(buffer).first(next_chunk(total - offset));
             input.read(chunk);
@@ -311,9 +330,8 @@ void clone(const fs::path& source, const fs::path& target, const Progress& progr
             if (progress) progress(offset, total);
         }
         writer.flush();
-    }
-    {
-        File staged(output.staging());
+    };
+    const auto verify_copy = [&](File& staged) {
         if (input.size() != total || staged.size() != total)
             invalid("Source or staged copy length changed");
         Hash source_hash;
@@ -329,7 +347,25 @@ void clone(const fs::path& source, const fs::path& target, const Progress& progr
         }
         const auto expected = original.finish();
         if (source_hash.finish() != expected || target_hash.finish() != expected)
-            invalid("Source changed or staged copy did not verify");
+            invalid("Source changed or copied data did not verify");
+    };
+    if (target_disk) {
+        if (total != target_disk->bytes)
+            invalid("Exact clone requires a source and disk of the same size");
+        File writer(*target_disk, true);
+        copy(writer);
+        writer.rewind();
+        verify_copy(writer);
+        return;
+    }
+    Output output(target);
+    {
+        File writer(output.staging(), true);
+        copy(writer);
+    }
+    {
+        File staged(output.staging());
+        verify_copy(staged);
     }
     output.publish();
 }

@@ -6,7 +6,7 @@ OpenImage uses the Qt Base subset of Qt 6.8.3, including Core, Gui, Widgets, Con
 - [Qt archive size and checksums](https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtbase-everywhere-src-6.8.3.tar.xz.mirrorlist)
 - SHA-256 `56001b905601bb9023d399f3ba780d7fa940f3e4861e496a7c490331f49e0b80`
 - [Qt build and platform prerequisites](https://doc.qt.io/qt-6.8/build-sources.html)
-- [Qt LGPL obligations](https://www.qt.io/licensing/open-source-lgpl-obligations)
+- [Qt LGPL obligations](https://www.qt.io/development/open-source-lgpl-obligations)
 
 The bundled profile builds without OpenGL, Vulkan, OpenSSL or Qt's Zstandard integration. OpenImage continues to use its own Zstandard codec. The Qt Widgets desktop uses the operating system's display interfaces. On Linux this profile requires X11/XCB and its development libraries. The Qt Wayland module is outside this profile.
 
