@@ -1,0 +1,19 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {"component": {"type": "application", "name": "OpenImage", "version": "0.1.0", "bom-ref": "openimage"}},
+  "components": [
+    {"type":"library","bom-ref":"zstd","name":"zstd","version":"1.5.7","purl":"pkg:github/facebook/zstd@v1.5.7","licenses":[{"license":{"id":"BSD-3-Clause"}}]},
+    {"type":"library","bom-ref":"lz4","name":"lz4","version":"1.10.0","purl":"pkg:github/lz4/lz4@v1.10.0","licenses":[{"license":{"id":"BSD-2-Clause"}}]},
+    {"type":"library","bom-ref":"blake3","name":"BLAKE3","version":"1.8.2","purl":"pkg:github/BLAKE3-team/BLAKE3@1.8.2","licenses":[{"license":{"id":"CC0-1.0"}}]},
+    {"type":"library","bom-ref":"lzma-sdk","name":"LZMA SDK","version":"26.05","licenses":[{"license":{"name":"Public domain (see SDK notices)"}}],"externalReferences":[{"type":"website","url":"https://www.7-zip.org/sdk.html"}]}
+  ],
+  "dependencies": [
+    {"ref":"openimage","dependsOn":["zstd","lz4","blake3","lzma-sdk"]},
+    {"ref":"zstd","dependsOn":[]},
+    {"ref":"lz4","dependsOn":[]},
+    {"ref":"blake3","dependsOn":[]},
+    {"ref":"lzma-sdk","dependsOn":[]}
+  ]
+}

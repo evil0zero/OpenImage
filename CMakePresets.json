@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {"name":"windows-msvc","generator":"Visual Studio 17 2022","architecture":"x64","binaryDir":"${sourceDir}/build/windows-msvc"},
+    {"name":"linux-gcc","generator":"Ninja","binaryDir":"${sourceDir}/build/linux-gcc","cacheVariables":{"CMAKE_BUILD_TYPE":"Release","CMAKE_C_COMPILER":"gcc","CMAKE_CXX_COMPILER":"g++"}},
+    {"name":"linux-clang-sanitizers","generator":"Ninja","binaryDir":"${sourceDir}/build/linux-clang-sanitizers","cacheVariables":{"CMAKE_BUILD_TYPE":"Debug","CMAKE_C_COMPILER":"clang","CMAKE_CXX_COMPILER":"clang++","CMAKE_C_FLAGS":"-fsanitize=address,undefined -fno-omit-frame-pointer","CMAKE_CXX_FLAGS":"-fsanitize=address,undefined -fno-omit-frame-pointer"}}
+  ],
+  "buildPresets": [
+    {"name":"windows-release","configurePreset":"windows-msvc","configuration":"Release"},
+    {"name":"windows-debug","configurePreset":"windows-msvc","configuration":"Debug"},
+    {"name":"linux-release","configurePreset":"linux-gcc"},
+    {"name":"linux-sanitizers","configurePreset":"linux-clang-sanitizers"}
+  ],
+  "testPresets": [
+    {"name":"windows-release","configurePreset":"windows-msvc","configuration":"Release","output":{"outputOnFailure":true}},
+    {"name":"linux-release","configurePreset":"linux-gcc","output":{"outputOnFailure":true}},
+    {"name":"linux-sanitizers","configurePreset":"linux-clang-sanitizers","output":{"outputOnFailure":true}}
+  ]
+}

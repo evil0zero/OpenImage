@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "regularFiles": {"backup": true, "restoreToNewFile": true, "cloneToNewFile": true, "verify": true, "compare": true, "exploreHeader": true},
+  "physicalDiskOperations": false,
+  "filesystemAwareImaging": [],
+  "filesystemResizing": [],
+  "filesystemExtraction": [],
+  "supportedFilesystemsPendingQualification": ["NTFS", "ext2", "ext3", "ext4", "FAT16", "FAT32", "exFAT", "XFS", "Btrfs"],
+  "specialStorageLayoutsPendingRecognition": ["BitLocker", "LUKS", "LVM", "mdraid", "Windows dynamic disks", "Windows Storage Spaces", "ReFS"],
+  "bootRecovery": false,
+  "authenticatedEncryption": false,
+  "incrementalImages": false,
+  "resume": false
+}
