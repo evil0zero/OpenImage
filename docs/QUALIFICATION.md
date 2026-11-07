@@ -2,7 +2,7 @@
 
 ## Windows preview.2 workflow integration
 
-Dashboard selection now supplies the physical source to Backup and Clone and the destination to Restore. All discovered disks appear in source choices. The desktop requests elevation. Online data disks use exclusive volume locks, with destination volumes dismounted before writes. The running OS disk is refused. GUI selection and existing integration tests pass. The online VHD test awaits Windows UAC approval and remains unqualified.
+Dashboard selection now supplies the physical source to Backup and Clone and the destination to Restore. All discovered disks appear in source choices. The desktop requests elevation. Online data disks use exclusive volume locks, with destination volumes dismounted before writes. The running OS disk is refused. GUI selection and existing integration tests pass. The elevated online VHD test passed on two 32 MiB disks initially partitioned as MBR and formatted as NTFS. Restore, clone, backup, verification and comparison reproduced the seeded data exactly. Rejection checks passed for missing overwrite confirmation, same-disk cloning, capacity mismatch and an invalid image. The test detached and removed both VHDs. Real-media and running-OS imaging remain unqualified.
 
 ## Windows 0.2.0 preview
 
